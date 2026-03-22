@@ -1,10 +1,13 @@
 let selectedSourceId: string | null = null;
-const recordBtn = document.getElementById('record-btn') as HTMLButtonElement;
-const timerDisplay = document.getElementById('timer') as HTMLParagraphElement;
 let mediaRecorder: MediaRecorder | null = null;
 let recordedChunks: Blob[] = [];
 let timeInterval: ReturnType<typeof setInterval> | null = null;
 let timerSeconds: number = 0;
+let webcamStream: MediaStream | null = null;
+const recordBtn = document.getElementById('record-btn') as HTMLButtonElement;
+const timerDisplay = document.getElementById('timer') as HTMLParagraphElement;
+const webcamToggle = document.getElementById('webcam-toggle') as HTMLInputElement;
+const webcamPreview = document.getElementById('webcam-preview') as HTMLVideoElement;
 
 function updateTimer() {
     timerSeconds++;
@@ -13,6 +16,26 @@ function updateTimer() {
     const seconds = (timerSeconds % 60).toString().padStart(2, '0');
     timerDisplay.textContent = `${hours}:${minutes}:${seconds}`;
 }   
+
+async function toggleWebcam() {
+    if (webcamToggle.checked) {
+        try {
+            webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            webcamPreview.srcObject = webcamStream;
+            webcamPreview.style.display = 'block';
+        } catch (error) {
+            console.error('Error accessing webcam:', error);
+        }
+    } else {
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            webcamStream = null;
+        }
+        webcamPreview.srcObject = null;
+        webcamPreview.style.display = 'none';
+    }
+}
+
 
 async function loadSources() {
     const sources = await window.electronAPI.getSources();
@@ -84,6 +107,10 @@ recordBtn.addEventListener('click', () => {
     } else {
         stopRecording();
     }
+});
+
+webcamToggle.addEventListener('change', () => {
+    toggleWebcam();
 });
 
 window.addEventListener('DOMContentLoaded', () => {
