@@ -8,6 +8,20 @@ export interface CaptureSource {
 
 export interface ElectronAPI {
     getSources: () => Promise<CaptureSource[]>;
+    saveRecording: (payload: SaveRecordingPayload) => Promise<SaveRecordingResponse>;
+    newSessionId: () => Promise<string>;
+}
+
+export interface SaveRecordingPayload {
+    buffer: ArrayBuffer;
+    type: 'screen' | 'webcam';
+    sessionId: string;
+}
+
+export interface SaveRecordingResponse {
+    success: boolean;
+    filePath?: string;
+    error?: string;
 }
 
 declare global {

@@ -1,9 +1,12 @@
+let currentSessionId: string | null = null;
 let selectedSourceId: string | null = null;
 let mediaRecorder: MediaRecorder | null = null;
 let recordedChunks: Blob[] = [];
 let timeInterval: ReturnType<typeof setInterval> | null = null;
 let timerSeconds: number = 0;
 let webcamStream: MediaStream | null = null;
+let webcamRecorder: MediaRecorder | null = null;
+let webcamChunks: Blob[] = [];
 const recordBtn = document.getElementById('record-btn') as HTMLButtonElement;
 const timerDisplay = document.getElementById('timer') as HTMLParagraphElement;
 const webcamToggle = document.getElementById('webcam-toggle') as HTMLInputElement;
@@ -80,6 +83,19 @@ async function startRecording() {
     };
 
     mediaRecorder.start();
+    if (webcamStream) {
+        webcamRecorder = new MediaRecorder(webcamStream);
+        webcamChunks = [];
+
+        webcamRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                webcamChunks.push(event.data);
+            }
+        };
+        webcamRecorder.start();
+    }
+
+    currentSessionId = await window.electronAPI.newSessionId();
     timerSeconds = 0;
     timerDisplay.textContent = '00:00:00';
     timeInterval = setInterval(updateTimer, 1000);
@@ -88,6 +104,42 @@ async function startRecording() {
 
 async function stopRecording() {
     if (!mediaRecorder) return;
+    mediaRecorder.onstop = async () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm'});
+        const buffer = await blob.arrayBuffer();
+
+        if (currentSessionId) {
+            const result = await window.electronAPI.saveRecording({
+                buffer,
+                type: 'screen',
+                sessionId: currentSessionId,
+            }); 
+            if (!result.success) {
+                alert(`Error saving recording: ${result.error}`);
+            } else {
+                alert(`Recording saved to: ${result.filePath}`);
+            }
+        }
+        if (webcamRecorder) {
+            webcamRecorder.onstop = async () => {
+                const webcamBlob = new Blob(webcamChunks, { type: 'video/webm' });
+                const webcamBuffer = await webcamBlob.arrayBuffer();
+                if (currentSessionId) {
+                    const webcamResult = await window.electronAPI.saveRecording({
+                        buffer: webcamBuffer,
+                        type: 'webcam',
+                        sessionId: currentSessionId,
+                    });
+                    if (!webcamResult.success) {
+                        alert(`Error saving webcam recording: ${webcamResult.error}`);
+                    } else {
+                        alert(`Webcam recording saved to: ${webcamResult.filePath}`);
+                    }
+                };
+                webcamRecorder?.stop();
+            };
+        }
+    };
 
     mediaRecorder.stop();
     timerSeconds = 0;
