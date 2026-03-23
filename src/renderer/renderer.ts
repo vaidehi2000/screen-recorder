@@ -46,7 +46,13 @@ async function loadSources() {
 
     sources.forEach(source => {
         const item = document.createElement('div');
-        item.textContent = source.name;
+        const img = document.createElement('img');
+        img.src = source.thumbnail;
+        img.width = 200;
+        const name = document.createElement('p');
+        name.textContent = source.name;
+        item.appendChild(img);
+        item.appendChild(name); 
         item.addEventListener('click', () => {
             selectedSourceId = source.id;
             recordBtn.disabled = false;
