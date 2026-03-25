@@ -222,5 +222,12 @@ webcamToggle.addEventListener('change', () => {
 });
 
 window.addEventListener('DOMContentLoaded', () => {
-  loadSources();
+    loadSources();
+});
+
+window.addEventListener('beforeunload', (e) => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        stopRecording();
+        e.preventDefault();
+    }
 });
