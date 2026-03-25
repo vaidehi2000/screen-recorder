@@ -11,11 +11,13 @@ const recordBtn = document.getElementById('record-btn') as HTMLButtonElement;
 const timerDisplay = document.getElementById('timer') as HTMLParagraphElement;
 const webcamToggle = document.getElementById('webcam-toggle') as HTMLInputElement;
 const webcamPreview = document.getElementById('webcam-preview') as HTMLVideoElement;
+const micToggle = document.getElementById('mic-toggle') as HTMLInputElement;
+const systemAudioToggle = document.getElementById('system-audio-toggle') as HTMLInputElement;
 
 function updateTimer() {
     timerSeconds++;
     const hours = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
-    const minutes = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+    const minutes = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
     const seconds = (timerSeconds % 60).toString().padStart(2, '0');
     timerDisplay.textContent = `${hours}:${minutes}:${seconds}`;
 }   
@@ -69,43 +71,68 @@ async function loadSources() {
 async function startRecording() {
     if (!selectedSourceId) return;
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-            mandatory: {
-                chromeMediaSource: 'desktop',
-                chromeMediaSourceId: selectedSourceId,
-            },
-        } as MediaTrackConstraints,
-    });
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+                mandatory: {
+                    chromeMediaSource: 'desktop',
+                    chromeMediaSourceId: selectedSourceId,
+                },
+            } as MediaTrackConstraints,
+        });
 
-    mediaRecorder = new MediaRecorder(stream);
-    recordedChunks = [];
-
-    mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-            recordedChunks.push(event.data);
+        if(micToggle.checked) {
+            const micStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { 
+                    echoCancellation: true, 
+                    noiseSuppression: true 
+                },
+                video: false 
+            });
+            micStream.getAudioTracks().forEach(track => stream.addTrack(track));
+            // console.log('Stream tracks after adding mic:', stream.getTracks());
         }
-    };
 
-    mediaRecorder.start();
-    if (webcamStream) {
-        webcamRecorder = new MediaRecorder(webcamStream);
-        webcamChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        recordedChunks = [];
 
-        webcamRecorder.ondataavailable = (event) => {
+        mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
-                webcamChunks.push(event.data);
+                recordedChunks.push(event.data);
             }
         };
-        webcamRecorder.start();
-    }
 
-    currentSessionId = await window.electronAPI.newSessionId();
-    timerSeconds = 0;
-    timerDisplay.textContent = '00:00:00';
-    timeInterval = setInterval(updateTimer, 1000);
-    recordBtn.textContent = 'Stop';
+        mediaRecorder.start();
+        if (webcamStream) {
+            const combinedWebcamStream = new MediaStream([
+                ...webcamStream.getVideoTracks(),
+                ...stream.getAudioTracks(),
+            ]);
+            webcamRecorder = new MediaRecorder(combinedWebcamStream);
+            webcamChunks = [];
+            webcamRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    webcamChunks.push(event.data);
+                }
+            };
+            webcamRecorder.start();
+        }
+
+        currentSessionId = await window.electronAPI.newSessionId();
+        timerDisplay.textContent = '00:00:00';
+        if (timeInterval) {
+            clearInterval(timeInterval);
+            timeInterval = null;
+        }
+        timerSeconds = 0;
+        timeInterval = setInterval(updateTimer, 1000);
+        recordBtn.textContent = 'Stop';
+
+    } catch (error) {
+        console.error('Error starting recording:', error);
+        alert(`Error: ${String(error)}`);
+    }
 }
 
 async function stopRecording() {
@@ -126,26 +153,26 @@ async function stopRecording() {
                 alert(`Recording saved to: ${result.filePath}`);
             }
         }
-        if (webcamRecorder) {
-            webcamRecorder.onstop = async () => {
-                const webcamBlob = new Blob(webcamChunks, { type: 'video/webm' });
-                const webcamBuffer = await webcamBlob.arrayBuffer();
-                if (currentSessionId) {
-                    const webcamResult = await window.electronAPI.saveRecording({
-                        buffer: webcamBuffer,
-                        type: 'webcam',
-                        sessionId: currentSessionId,
-                    });
-                    if (!webcamResult.success) {
-                        alert(`Error saving webcam recording: ${webcamResult.error}`);
-                    } else {
-                        alert(`Webcam recording saved to: ${webcamResult.filePath}`);
-                    }
-                };
-                webcamRecorder?.stop();
-            };
-        }
     };
+    if (webcamRecorder) {
+        webcamRecorder.onstop = async () => {
+            const webcamBlob = new Blob(webcamChunks, { type: 'video/webm' });
+            const webcamBuffer = await webcamBlob.arrayBuffer();
+            if (currentSessionId) {
+                const webcamResult = await window.electronAPI.saveRecording({
+                    buffer: webcamBuffer,
+                    type: 'webcam',
+                    sessionId: currentSessionId,
+                });
+                if (!webcamResult.success) {
+                    alert(`Error saving webcam recording: ${webcamResult.error}`);
+                } else {
+                    alert(`Webcam recording saved to: ${webcamResult.filePath}`);
+                }
+            };
+        };
+        webcamRecorder?.stop();
+    }
 
     mediaRecorder.stop();
     timerSeconds = 0;
@@ -157,7 +184,6 @@ async function stopRecording() {
     recordBtn.textContent = 'Record';
     recordBtn.disabled = true;
 }
-
 
 recordBtn.addEventListener('click', () => {
     if (recordBtn.textContent === 'Record') {
