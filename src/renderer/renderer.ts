@@ -48,13 +48,29 @@ async function loadSources() {
 
     sources.forEach(source => {
         const item = document.createElement('div');
-        const img = document.createElement('img');
-        img.src = source.thumbnail;
-        img.width = 200;
-        const name = document.createElement('p');
+        item.classList.add('source-item');
+
+        const header = document.createElement('div');
+        header.classList.add('source-item-header');
+
+        if(source.appIcon) {
+            const icon = document.createElement('img');
+            icon.src = source.appIcon;
+            icon.classList.add('app-icon');
+            header.appendChild(icon);
+        }
+        const name = document.createElement('span');
         name.textContent = source.name;
-        item.appendChild(img);
-        item.appendChild(name); 
+        name.title = source.name;
+        header.appendChild(name);
+
+        const thumbnail = document.createElement('img');
+        thumbnail.src = source.thumbnail;
+        thumbnail.classList.add('thumbnail');
+
+        item.appendChild(header);
+        item.appendChild(thumbnail);
+
         item.addEventListener('click', () => {
             selectedSourceId = source.id;
             recordBtn.disabled = false;
@@ -63,7 +79,6 @@ async function loadSources() {
             });
             item.classList.add('selected');
         });
-        item.classList.add('source-item');
         list?.appendChild(item);
     });
 }

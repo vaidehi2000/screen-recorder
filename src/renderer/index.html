@@ -3,15 +3,76 @@
     <head>
         <title>Screen Recorder</title>
         <style>
+            body {
+                background-color: #1a1a1a;
+                color: white;
+                font-family: sans-serif;
+            }
+            #sources-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 8px;
+                padding: 12px;
+                /* max-height: 200px; */
+                /* overflow-y: auto;
+                margin-bottom: 20px; */
+            }
             .source-item {
-                padding: 10px;
-                border: 1px solid #ccc;
-                margin-bottom: 5px;
+                background-color: #2d2d2d;
+                /* padding: 10px; */
+                border: 2px solid transparent;
+                border-radius: 4px;
+                /* margin-bottom: 5px; */
                 cursor: pointer;
+                overflow: hidden;
+            }
+            .source-item:hover {
+                border-color: #555;
             }
             .source-item.selected {
-                background-color: #007bff;
+                background-color: #0078d4;
+                /* color: white; */
+            }
+            .source-item-header {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 8px;
+            }
+
+            .source-item-header img.app-icon {
+                width: 16px;
+                height: 16px;
+                object-fit: contain;
+            }
+
+            .source-item-header span {
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .source-item img.thumbnail {
+                width: 100%;
+                height: 120px;
+                object-fit: cover;
+                display: block;
+            }
+            
+            #record-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            #record-btn {
+                background-color: #0078d4;
                 color: white;
+                border: none;
+                padding: 10px 20px;
+                font-size: 16px;
+                border-radius: 4px;
+                cursor: pointer;
             }
         </style>
     </head>
@@ -35,6 +96,6 @@
         </label>
         <video id="webcam-preview" autoplay muted style="display: none; width: 200px; height: 150px; border: 1px solid #ccc;"></video>
         <script src="../../dist/renderer/renderer.js"></script>
-        <p>Welcome to the Screen Recorder application!.</p>
+        <!-- <p>Welcome to the Screen Recorder application!.</p> -->
     </body>
 </html>
