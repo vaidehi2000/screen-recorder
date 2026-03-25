@@ -153,6 +153,11 @@ async function startRecording() {
 async function stopRecording() {
     if (!mediaRecorder) return;
     mediaRecorder.onstop = async () => {
+        if(recordedChunks.length === 0) {
+            alert('No recording data available to save.');
+            return;
+        }
+
         const blob = new Blob(recordedChunks, { type: 'video/webm'});
         const buffer = await blob.arrayBuffer();
 
@@ -171,6 +176,10 @@ async function stopRecording() {
     };
     if (webcamRecorder) {
         webcamRecorder.onstop = async () => {
+            if(webcamChunks.length === 0) {
+                return;
+            }
+
             const webcamBlob = new Blob(webcamChunks, { type: 'video/webm' });
             const webcamBuffer = await webcamBlob.arrayBuffer();
             if (currentSessionId) {
