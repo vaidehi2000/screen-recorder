@@ -25,11 +25,15 @@ function updateTimer() {
 async function toggleWebcam() {
     if (webcamToggle.checked) {
         try {
-            webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            webcamStream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: false 
+            });
             webcamPreview.srcObject = webcamStream;
             webcamPreview.style.display = 'block';
         } catch (error) {
             console.error('Error accessing webcam:', error);
+            webcamToggle.checked = false;
         }
     } else {
         if (webcamStream) {
@@ -98,15 +102,40 @@ async function startRecording() {
         });
 
         if(micToggle.checked) {
-            const micStream = await navigator.mediaDevices.getUserMedia({ 
+            try {
+                const micStream = await navigator.mediaDevices.getUserMedia({ 
                 audio: { 
                     echoCancellation: true, 
                     noiseSuppression: true 
                 },
                 video: false 
-            });
-            micStream.getAudioTracks().forEach(track => stream.addTrack(track));
-            // console.log('Stream tracks after adding mic:', stream.getTracks());
+                });
+                micStream.getAudioTracks().forEach(track => stream.addTrack(track));
+            } 
+            catch (error) {
+                let message = "";
+
+                if (error instanceof DOMException) {
+                    if (error.name === 'NotAllowedError') {
+                        message = 'Microphone access was denied. Please allow access and try again.';
+                    } else if (error.name === 'NotFoundError') {
+                        message = 'No microphone found. Please connect a microphone and try again.';
+                    } else if (error.name === 'NotReadableError') {
+                        message = 'Microphone is already in use by another application. Please close that application and try again.';
+                    } else {
+                        message = `An error occurred while accessing the microphone: ${error.message}`;
+                    }
+
+                    const continueWithoutMic = confirm(`${message}\n\nDo you want to continue without microphone audio?`);
+                    if (continueWithoutMic) {
+                        micToggle.checked = false;
+                    } else {
+                        stream.getTracks().forEach(track => track.stop());
+                        micToggle.checked = false;
+                        return;
+                    }
+                }
+            }
         }
 
         mediaRecorder = new MediaRecorder(stream);
