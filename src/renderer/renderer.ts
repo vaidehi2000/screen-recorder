@@ -58,6 +58,10 @@ async function loadSources() {
         const item = document.createElement('div');
         item.classList.add('source-item');
 
+        if (source.id === selectedSourceId) {
+            item.classList.add('selected');
+        }
+        
         const header = document.createElement('div');
         header.classList.add('source-item-header');
 
