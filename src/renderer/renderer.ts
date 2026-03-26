@@ -1,3 +1,4 @@
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
 let currentSessionId: string | null = null;
 let selectedSourceId: string | null = null;
 let mediaRecorder: MediaRecorder | null = null;
@@ -50,6 +51,9 @@ async function loadSources() {
     const sources = await window.electronAPI.getSources();
     const list = document.getElementById('sources-list');
 
+    if (!list) return;
+    list.innerHTML = '';
+
     sources.forEach(source => {
         const item = document.createElement('div');
         item.classList.add('source-item');
@@ -85,6 +89,15 @@ async function loadSources() {
         });
         list?.appendChild(item);
     });
+}
+
+function startRefreshingSources() {
+    if (refreshInterval) return;
+    refreshInterval = setInterval(async() => {
+        if (mediaRecorder?.state !== 'recording') {
+            await loadSources();
+        }
+    }, 3000);
 }
 
 async function startRecording() {
@@ -252,6 +265,7 @@ webcamToggle.addEventListener('change', () => {
 
 window.addEventListener('DOMContentLoaded', () => {
     loadSources();
+    startRefreshingSources();
 });
 
 window.addEventListener('beforeunload', (e) => {
