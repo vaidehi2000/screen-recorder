@@ -24,6 +24,12 @@ function updateTimer() {
 }   
 
 async function toggleWebcam() {
+    if (!webcamPreview) {
+        console.error('Webcam preview element not found');
+        webcamToggle.checked = false;
+        return;
+    }
+
     if (webcamToggle.checked) {
         try {
             webcamStream = await navigator.mediaDevices.getUserMedia({ 
@@ -32,6 +38,10 @@ async function toggleWebcam() {
             });
             webcamPreview.srcObject = webcamStream;
             webcamPreview.style.display = 'block';
+            if (webcamPreview) {
+                webcamPreview.srcObject = webcamStream;
+                webcamPreview.style.display = 'block';
+            }
         } catch (error) {
             console.error('Error accessing webcam:', error);
             webcamToggle.checked = false;
@@ -40,6 +50,10 @@ async function toggleWebcam() {
         if (webcamStream) {
             webcamStream.getTracks().forEach(track => track.stop());
             webcamStream = null;
+                if (webcamPreview) {
+                    webcamPreview.srcObject = null;
+                    webcamPreview.style.display = 'none';
+                }
         }
         webcamPreview.srcObject = null;
         webcamPreview.style.display = 'none';
@@ -61,7 +75,7 @@ async function loadSources() {
         if (source.id === selectedSourceId) {
             item.classList.add('selected');
         }
-        
+
         const header = document.createElement('div');
         header.classList.add('source-item-header');
 
@@ -198,9 +212,31 @@ async function startRecording() {
 
 async function stopRecording() {
     if (!mediaRecorder) return;
+
+    let screenSaved = false;
+    let webcamSaved = false;
+    let screenFilePath = '';
+    let webcamFilePath = '';
+    // const actualSeconds = Math.max(0, timerSeconds - 1);
+    const hours = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
+    const minutes = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
+    const seconds = (timerSeconds % 60).toString().padStart(2, '0');
+    const duration = `${hours}:${minutes}:${seconds}`;
+    
+    const openReviewIfReady = async () => {
+        if (screenSaved && (!webcamRecorder || webcamSaved)) {
+            await window.electronAPI.openReviewWindow({
+                filePath: screenFilePath,
+                duration, 
+                sessionPath: screenFilePath ? screenFilePath?.substring(0, screenFilePath.lastIndexOf('\\')) || '' : '',
+                webcamPath: webcamFilePath ? webcamFilePath : '',
+            });
+        }
+    };
+
     mediaRecorder.onstop = async () => {
         if(recordedChunks.length === 0) {
-            alert('No recording data available to save.');
+            alert('Recording was too short and has been discarded.');
             return;
         }
 
@@ -216,7 +252,9 @@ async function stopRecording() {
             if (!result.success) {
                 alert(`Error saving recording: ${result.error}`);
             } else {
-                alert(`Recording saved to: ${result.filePath}`);
+                screenFilePath = result.filePath || '';
+                screenSaved = true;
+                await openReviewIfReady();
             }
         }
     };
@@ -237,14 +275,16 @@ async function stopRecording() {
                 if (!webcamResult.success) {
                     alert(`Error saving webcam recording: ${webcamResult.error}`);
                 } else {
-                    alert(`Webcam recording saved to: ${webcamResult.filePath}`);
+                    webcamFilePath = webcamResult.filePath || '';
+                    webcamSaved = true;
+                    await openReviewIfReady();
                 }
             };
         };
-        webcamRecorder?.stop();
     }
 
     mediaRecorder.stop();
+    webcamRecorder?.stop();
     timerSeconds = 0;
     if (timeInterval) {
         clearInterval(timeInterval);
