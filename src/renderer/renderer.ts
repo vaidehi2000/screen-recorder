@@ -203,6 +203,9 @@ async function startRecording() {
         timerSeconds = 0;
         timeInterval = setInterval(updateTimer, 1000);
         recordBtn.textContent = 'Stop';
+        webcamToggle.disabled = true;
+        micToggle.disabled = true;
+        systemAudioToggle.disabled = true;
 
     } catch (error) {
         console.error('Error starting recording:', error);
@@ -293,6 +296,19 @@ async function stopRecording() {
     timerDisplay.textContent = '00:00:00';
     recordBtn.textContent = 'Record';
     recordBtn.disabled = true;
+    webcamToggle.disabled = false;
+    micToggle.disabled = false;
+    systemAudioToggle.disabled = false; 
+    webcamToggle.checked = false;
+    micToggle.checked = false;
+    systemAudioToggle.checked = false;
+
+    if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+        webcamPreview.srcObject = null;
+        webcamPreview.style.display = 'none';
+    }
 }
 
 recordBtn.addEventListener('click', () => {

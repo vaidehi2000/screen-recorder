@@ -61,10 +61,10 @@ discardBtn.addEventListener('click', () => {
         webcamPath: currentWebcamPath,
         sessionPath: currentSessionPath
     });
-    // window.electronAPI.closeReviewWindow({
-    //     screenPath: currentScreenPath,
-    //     webcamPath: currentWebcamPath
-    // });
+    window.electronAPI.closeReviewWindow({
+        screenPath: currentScreenPath,
+        webcamPath: currentWebcamPath
+    });
 });
 
 function makeEditable(
