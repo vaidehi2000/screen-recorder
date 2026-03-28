@@ -86,6 +86,15 @@
             <span id="save-location-display">Default: Videos/ScreenRecorder</span>
             <button id="choose-folder-btn">Change</button>
         </div>
+        <div id="bitrate-row">
+            <label for="bitrate-input">Quality:</label>
+            <select id="bitrate-input">
+                <option value="15000000">Ultra (15 Mbps)</option>
+                <option value="8000000">High (8 Mbps)</option>
+                <option value="5000000" selected>Medium (5 Mbps)</option>
+                <option value="2500000">Low (2.5 Mbps)</option>
+            </select>
+        </div>
         <button id="record-btn" disabled>Record</button>
         <p id="timer">00:00:00</p>
         <label>

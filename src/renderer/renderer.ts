@@ -17,6 +17,7 @@ const micToggle = document.getElementById('mic-toggle') as HTMLInputElement;
 const systemAudioToggle = document.getElementById('system-audio-toggle') as HTMLInputElement;
 const chooseFolderBtn = document.getElementById('choose-folder-btn') as HTMLButtonElement;
 const saveLocationDisplay = document.getElementById('save-location-display') as HTMLSpanElement;
+const bitrateSelect = document.getElementById('bitrate-input') as HTMLSelectElement;
 
 chooseFolderBtn.addEventListener('click', async () => {
     const location = await window.electronAPI.chooseSaveLocation();
@@ -178,9 +179,12 @@ async function startRecording() {
                     }
                 }
             }
-        }
+        }  
+        const bitrate = parseInt(bitrateSelect.value);
 
-        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = new MediaRecorder(stream, {
+            videoBitsPerSecond: bitrate,
+        });
         recordedChunks = [];
 
         mediaRecorder.ondataavailable = (event) => {
@@ -195,7 +199,9 @@ async function startRecording() {
                 ...webcamStream.getVideoTracks(),
                 ...stream.getAudioTracks(),
             ]);
-            webcamRecorder = new MediaRecorder(combinedWebcamStream);
+            webcamRecorder = new MediaRecorder(combinedWebcamStream, {
+                videoBitsPerSecond: bitrate,
+            });
             webcamChunks = [];
             webcamRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
@@ -217,6 +223,7 @@ async function startRecording() {
         webcamToggle.disabled = true;
         micToggle.disabled = true;
         systemAudioToggle.disabled = true;
+        bitrateSelect.disabled = true;
 
     } catch (error) {
         console.error('Error starting recording:', error);
@@ -308,6 +315,7 @@ async function stopRecording() {
     }
     timerDisplay.textContent = '00:00:00';
     recordBtn.textContent = 'Record';
+    bitrateSelect.disabled = false;
     recordBtn.disabled = true;
     webcamToggle.disabled = false;
     micToggle.disabled = false;
