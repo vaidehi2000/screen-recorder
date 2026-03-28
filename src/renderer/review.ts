@@ -45,7 +45,7 @@ if (filePath) {
 if (webcamPath) {
     webcamReviewPreview.src = `file://${webcamPath}`;
     webcamReviewPreview.play();
-    webCamContainer.style.display = 'block';
+    webCamContainer.classList.remove('hidden');
 }
 
 openFolderBtn.addEventListener('click', () => {
