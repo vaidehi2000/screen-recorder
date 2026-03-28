@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, desktopCapturer, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, desktopCapturer, shell, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -33,9 +33,10 @@ ipcMain.handle('new-session-id', () => {
     return crypto.randomUUID();
 });
 
-ipcMain.handle('save-recording', async (_event, { buffer, type, sessionId }) => {
+ipcMain.handle('save-recording', async (_event, { buffer, type, sessionId, saveLocation }) => {
     try {
-        const dir = path.join(app.getPath('videos'), 'ScreenRecorder', sessionId);
+        const baseDir = saveLocation || path.join(app.getPath('videos'), 'ScreenRecorder');
+        const dir = path.join(baseDir, sessionId);
         await fs.promises.mkdir(dir, { recursive: true });
         const filePath = path.join(dir, `${type}-${Date.now()}.webm`);
         await fs.promises.writeFile(filePath, Buffer.from(buffer));
@@ -123,4 +124,18 @@ ipcMain.handle('rename-folder', async (_event, { oldPath, newPath }) => {
         const message = error instanceof Error ? error.message : String(error);
         return { success: false, error: message };
     }
+});
+
+ipcMain.handle('choose-save-location', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) {
+        return null;
+    }
+    const result = await dialog.showOpenDialog(win, {
+        properties: ['openDirectory']
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+        return null;
+    }
+    return result.filePaths[0];
 });

@@ -14,4 +14,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('rename-file', params),
     renameFolder: (params: { oldPath: string; newPath: string }) => 
       ipcRenderer.invoke('rename-folder', params),
+    chooseSaveLocation: () => ipcRenderer.invoke('choose-save-location')
 }); 

@@ -39,6 +39,7 @@ export interface ElectronAPI {
         newPath?: string, 
         error?: string
     }>;
+    chooseSaveLocation: () => Promise<string | null>;
 }
 
 export interface SaveRecordingPayload {
@@ -57,4 +58,11 @@ declare global {
     interface Window {
         electronAPI: ElectronAPI;
     }
+}
+
+export interface SaveRecordingPayload {
+    buffer: ArrayBuffer;
+    type: 'screen' | 'webcam';
+    sessionId: string;
+    saveLocation?: string;
 }

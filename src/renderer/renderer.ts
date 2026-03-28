@@ -8,12 +8,23 @@ let timerSeconds: number = 0;
 let webcamStream: MediaStream | null = null;
 let webcamRecorder: MediaRecorder | null = null;
 let webcamChunks: Blob[] = [];
+let saveLocation: string | null = null;
 const recordBtn = document.getElementById('record-btn') as HTMLButtonElement;
 const timerDisplay = document.getElementById('timer') as HTMLParagraphElement;
 const webcamToggle = document.getElementById('webcam-toggle') as HTMLInputElement;
 const webcamPreview = document.getElementById('webcam-preview') as HTMLVideoElement;
 const micToggle = document.getElementById('mic-toggle') as HTMLInputElement;
 const systemAudioToggle = document.getElementById('system-audio-toggle') as HTMLInputElement;
+const chooseFolderBtn = document.getElementById('choose-folder-btn') as HTMLButtonElement;
+const saveLocationDisplay = document.getElementById('save-location-display') as HTMLSpanElement;
+
+chooseFolderBtn.addEventListener('click', async () => {
+    const location = await window.electronAPI.chooseSaveLocation();
+    if (location) {
+        saveLocation = location;
+        saveLocationDisplay.textContent = `Save Location: ${location}`;
+    }
+});
 
 function updateTimer() {
     timerSeconds++;
@@ -251,6 +262,7 @@ async function stopRecording() {
                 buffer,
                 type: 'screen',
                 sessionId: currentSessionId,
+                saveLocation: saveLocation || undefined,
             }); 
             if (!result.success) {
                 alert(`Error saving recording: ${result.error}`);
@@ -274,6 +286,7 @@ async function stopRecording() {
                     buffer: webcamBuffer,
                     type: 'webcam',
                     sessionId: currentSessionId,
+                    saveLocation: saveLocation || undefined,
                 });
                 if (!webcamResult.success) {
                     alert(`Error saving webcam recording: ${webcamResult.error}`);
