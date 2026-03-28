@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveRecording: (payload: any) => ipcRenderer.invoke('save-recording', payload),
     newSessionId: () => ipcRenderer.invoke('new-session-id'),
     openFolder: (folderPath: string) => ipcRenderer.send('open-folder', folderPath),
-    closeReviewWindow: () => ipcRenderer.invoke('close-review-window'),
+    closeReviewWindow: (paths: { screenPath: string; webcamPath: string }) => ipcRenderer.send('close-review-window', paths),
     minimize: () => ipcRenderer.invoke('minimize'),
     close: () => ipcRenderer.invoke('close'),
     openReviewWindow: (data: { filePath: string; duration: string; sessionPath: string }) => 

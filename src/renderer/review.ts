@@ -33,5 +33,9 @@ openFolderBtn.addEventListener('click', () => {
 });
 
 discardBtn.addEventListener('click', () => {
-    window.electronAPI.closeReviewWindow();
+    console.log('Discard clicked');
+    window.electronAPI.closeReviewWindow({
+        screenPath: filePath,
+        webcamPath: webcamPath
+    });
 });

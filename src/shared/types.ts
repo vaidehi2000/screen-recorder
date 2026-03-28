@@ -11,7 +11,10 @@ export interface ElectronAPI {
     saveRecording: (payload: SaveRecordingPayload) => Promise<SaveRecordingResponse>;
     newSessionId: () => Promise<string>;
     openFolder: (folderPath: string) => void;
-    closeReviewWindow: () => void;
+    closeReviewWindow: (paths: { 
+        screenPath: string; 
+        webcamPath: string 
+    }) => void;
     minimize: () => void;
     close: () => void;
     openReviewWindow: (params: { 
