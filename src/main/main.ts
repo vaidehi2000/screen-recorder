@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, desktopCapturer, shell, session } from 'electron';
+import { app, BrowserWindow, ipcMain, desktopCapturer, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -74,9 +74,11 @@ ipcMain.on('close-review-window', (event, { screenPath, webcamPath }: { screenPa
         .catch(err => console.error('Error deleting webcam recording:', err));
     }
     if (sessionDir) {
-        fs.promises.rmdir(sessionDir)
-        .then(() => console.log('Session directory deleted successfully'))
-        .catch(err => console.error('Error deleting session directory:', err));
+        setTimeout(() => {
+            fs.promises.rmdir(sessionDir)
+            .then(() => console.log('Session directory deleted successfully'))
+            .catch(err => console.error('Error deleting session directory:', err));
+        }, 500);
     }
     BrowserWindow.fromWebContents(event.sender)?.close();
 });
@@ -98,3 +100,27 @@ ipcMain.handle('open-review-window', (_event, { filePath, duration, sessionPath,
     ); 
 });
 
+ipcMain.handle('rename-file', async (_event, { oldPath, newPath }) => {
+    try {
+        const dir = path.dirname(oldPath);
+        const extension = path.extname(oldPath);
+        const newFilePath = path.join(dir, `${newPath}${extension}`);
+        await fs.promises.rename(oldPath, newFilePath);
+        return { success: true, newPath: newFilePath };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { success: false, error: message };
+    }
+});
+
+ipcMain.handle('rename-folder', async (_event, { oldPath, newPath }) => {
+    try {
+        const parentDir = path.dirname(oldPath);
+        const newFolderPath = path.join(parentDir, newPath);
+        await fs.promises.rename(oldPath, newFolderPath);
+        return { success: true, newPath: newFolderPath };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { success: false, error: message };
+    }
+});

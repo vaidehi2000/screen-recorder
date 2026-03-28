@@ -10,4 +10,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     close: () => ipcRenderer.invoke('close'),
     openReviewWindow: (data: { filePath: string; duration: string; sessionPath: string }) => 
       ipcRenderer.invoke('open-review-window', data),
+    renameFile: (params: { oldPath: string; newPath: string }) => 
+      ipcRenderer.invoke('rename-file', params),
+    renameFolder: (params: { oldPath: string; newPath: string }) => 
+      ipcRenderer.invoke('rename-folder', params),
 }); 

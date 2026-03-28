@@ -23,6 +23,22 @@ export interface ElectronAPI {
         sessionPath: string, 
         webcamPath: string 
     }) => Promise<void>;
+    renameFile: (params: {
+        oldPath: string;
+        newPath: string;
+    }) => Promise<{ 
+        success: boolean, 
+        newPath?: string, 
+        error?: string 
+    }>;
+    renameFolder: (params: {
+        oldPath: string;
+        newPath: string;
+    }) => Promise<{ 
+        success: boolean, 
+        newPath?: string, 
+        error?: string
+    }>;
 }
 
 export interface SaveRecordingPayload {

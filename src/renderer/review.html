@@ -2,6 +2,7 @@
 <html>
     <head>
         <title>Recording Complete</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <style>
             body {
                 background-color: #1a1a1a;
@@ -38,6 +39,61 @@
                 border: 2px solid #555;
                 border-radius: 4px;
             }
+            .filename-row, .folder-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                margin-top: 5px;
+            }
+            .edit-btn {
+                background-color: #555;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            .edit-btn:hover {
+                background-color: #777;
+            }
+            input.rename-input {
+                background-color: #333;
+                color: white;
+                border: none;
+                padding: 5px;
+                border-radius: 4px;
+                width: 70%;
+            }
+            /* .filename-row, .folder-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 6px;
+            }
+
+            .edit-btn {
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+
+            .edit-btn:hover {
+                background-color: #444;
+            }
+
+            input.rename-input {
+                background-color: #2d2d2d;
+                color: white;
+                border: 1px solid #0078d4;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 14px;
+                width: 200px;
+            } */
         </style>
     </head>
     <body>
@@ -54,11 +110,30 @@
             <div class="preview-container">
                 <p>Screen Recording</p>
                 <video id="screen-preview" controls></video>
+                <div class = "filename-row">
+                    <span id="screen-filename"></span>
+                    <button class="edit-btn" id="edit-screen-btn">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                </div>
             </div>
             <div class="preview-container" id="webcam-container" style="display:none;">
                 <p>Webcam Recording</p>
                 <video id="webcam-preview" controls></video>
+                <div class = "filename-row">
+                    <span id="webcam-filename"></span>
+                    <button class="edit-btn" id="edit-webcam-btn">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                </div>
             </div>
+        </div>
+
+        <div class="folder-row">
+            <span id="folder-name"></span>
+            <button class="edit-btn" id="edit-folder-btn">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </button>
         </div>
 
         <p id="duration"></p>
