@@ -78,9 +78,8 @@ npm install
 - `@types/node` — TypeScript types for Node.js
 
 No separate installation of ffmpeg or ffprobe is required — they are bundled with the app via npm packages.
-```
 
-```
+
 ### Run
 ```bash
 npm run dev
