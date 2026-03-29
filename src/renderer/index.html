@@ -3,113 +3,53 @@
     <head>
         <title>Screen Recorder</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-        <style>
-            body {
-                background-color: #1a1a1a;
-                color: white;
-                font-family: sans-serif;
-            }
-            #sources-list {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 8px;
-                padding: 12px;
-                /* max-height: 200px; */
-                /* overflow-y: auto;
-                margin-bottom: 20px; */
-            }
-            .source-item {
-                background-color: #2d2d2d;
-                /* padding: 10px; */
-                border: 2px solid transparent;
-                border-radius: 4px;
-                /* margin-bottom: 5px; */
-                cursor: pointer;
-                overflow: hidden;
-            }
-            .source-item:hover {
-                border-color: #555;
-            }
-            .source-item.selected {
-                background-color: #0078d4;
-                /* color: white; */
-            }
-            .source-item-header {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                padding: 6px 8px;
-            }
-
-            .source-item-header img.app-icon {
-                width: 16px;
-                height: 16px;
-                object-fit: contain;
-            }
-
-            .source-item-header span {
-                font-size: 12px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .source-item img.thumbnail {
-                width: 100%;
-                height: 120px;
-                object-fit: cover;
-                display: block;
-            }
-            
-            #record-btn:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-            }
-
-            #record-btn {
-                background-color: #0078d4;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                font-size: 16px;
-                border-radius: 4px;
-                cursor: pointer;
-            }
-        </style>
+        <link rel="stylesheet" href="index.css">
     </head>
     <body>
         <h1>Screen Recorder</h1>
-        <div id="sources-list">
 
+        <div id="sources-list"></div>
+
+        <div id="controls">
+            <div id="toggles">
+                <label>
+                    <input type="checkbox" id="webcam-toggle"> Include Webcam
+                </label>
+                <label>
+                    <input type="checkbox" id="mic-toggle" />
+                    Include Microphone
+                </label>
+                <label>
+                    <input type="checkbox" id="system-audio-toggle" />
+                    Include System Audio
+                </label>
+            </div>
         </div>
+
+        <video id="webcam-preview" autoplay muted></video>
+        
+        <div id="settings-row">
+            <div id="bitrate-row">
+                <label for="bitrate-input">Quality:</label>
+                <select id="bitrate-input">
+                    <option value="15000000">Ultra (15 Mbps)</option>
+                    <option value="8000000">High (8 Mbps)</option>
+                    <option value="5000000" selected>Medium (5 Mbps)</option>
+                    <option value="2500000">Low (2.5 Mbps)</option>
+                </select>
+            </div>
+        </div>
+        
         <div id="save-location-row">
             <span id="save-location-display">Default: Videos/ScreenRecorder</span>
             <button id="choose-folder-btn">Change</button>
         </div>
-        <div id="bitrate-row">
-            <label for="bitrate-input">Quality:</label>
-            <select id="bitrate-input">
-                <option value="15000000">Ultra (15 Mbps)</option>
-                <option value="8000000">High (8 Mbps)</option>
-                <option value="5000000" selected>Medium (5 Mbps)</option>
-                <option value="2500000">Low (2.5 Mbps)</option>
-            </select>
+
+        <div id="record-row">
+            <button id="record-btn" disabled>Record</button>
+            <span id="timer">00:00:00</span>
         </div>
-        <button id="record-btn" disabled>Record</button>
-        <p id="timer">00:00:00</p>
-        <label>
-            <input type="checkbox" id="webcam-toggle"> Include Webcam
-        </label>
-        <label>
-            <input type="checkbox" id="mic-toggle" />
-            Include Microphone
-        </label>
-        <label>
-            <input type="checkbox" id="system-audio-toggle" />
-            Include System Audio
-        </label>
-        <video id="webcam-preview" autoplay muted style="display: none; width: 200px; height: 150px; border: 1px solid #ccc;"></video>
+        
         <script src="../../dist/renderer/renderer.js"></script>
-        <!-- <p>Welcome to the Screen Recorder application!.</p> -->
     </body>
 </html>
