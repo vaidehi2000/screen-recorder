@@ -111,7 +111,7 @@ ipcMain.handle('save-recording', async (_event, { buffer, type, sessionId, saveL
         const baseDir = saveLocation || path.join(app.getPath('videos'), 'ScreenRecorder');
         const dir = path.join(baseDir, sessionId);
         await fs.promises.mkdir(dir, { recursive: true });
-        const filePath = path.join(dir, `${type}-${Date.now()}.webm`);
+        const filePath = path.join(dir, `${type}.webm`);
         await fs.promises.writeFile(filePath, Buffer.from(buffer));
         return { success: true, filePath };
     } catch (error) {
