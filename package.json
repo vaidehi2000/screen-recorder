@@ -9,8 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "@types/fluent-ffmpeg": "^2.1.28",
     "@types/node": "^25.5.0",
     "electron": "^41.0.3",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.3"
   }
 }

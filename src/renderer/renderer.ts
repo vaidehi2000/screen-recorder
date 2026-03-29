@@ -72,7 +72,6 @@ async function toggleWebcam() {
     }
 }
 
-
 async function loadSources() {
     const sources = await window.electronAPI.getSources();
     const list = document.getElementById('sources-list');
@@ -135,14 +134,20 @@ async function startRecording() {
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
+            audio: systemAudioToggle.checked ? {
+                mandatory: {
+                    chromeMediaSource: 'desktop',
+                    chromeMediaSourceId: selectedSourceId,
+                },
+            } as unknown as MediaTrackConstraints : false,
             video: {
                 mandatory: {
                     chromeMediaSource: 'desktop',
                     chromeMediaSourceId: selectedSourceId,
                 },
-            } as MediaTrackConstraints,
+            } as unknown as MediaTrackConstraints,
         });
+        console.log('Screen stream obtained', stream.getTracks());
 
         if(micToggle.checked) {
             try {
@@ -154,6 +159,8 @@ async function startRecording() {
                 video: false 
                 });
                 micStream.getAudioTracks().forEach(track => stream.addTrack(track));
+                console.log('Microphone stream added to recording', stream.getTracks());
+                console.log('Audio tracks in stream:', stream.getAudioTracks());
             } 
             catch (error) {
                 let message = "";
@@ -182,9 +189,22 @@ async function startRecording() {
         }  
         const bitrate = parseInt(bitrateSelect.value);
 
-        mediaRecorder = new MediaRecorder(stream, {
+        const audioContext = new AudioContext();
+        const destination = audioContext.createMediaStreamDestination();
+
+        stream.getAudioTracks().forEach(track => {
+            const source = audioContext.createMediaStreamSource(new MediaStream([track]));
+            source.connect(destination);
+        });
+        const mixedStream = new MediaStream([
+            ...stream.getVideoTracks(), 
+            ...destination.stream.getAudioTracks()
+        ]);
+        mediaRecorder = new MediaRecorder(mixedStream, {
             videoBitsPerSecond: bitrate,
         });
+        console.log('new MediaRecorder created', mediaRecorder.state);
+        console.log('Mediarecorder mimeType:', mediaRecorder.mimeType);
         recordedChunks = [];
 
         mediaRecorder.ondataavailable = (event) => {
@@ -194,21 +214,24 @@ async function startRecording() {
         };
 
         mediaRecorder.start();
+        console.log('MediaRecorder started', mediaRecorder.state);
         if (webcamStream) {
             const combinedWebcamStream = new MediaStream([
                 ...webcamStream.getVideoTracks(),
-                ...stream.getAudioTracks(),
+                ...destination.stream.getAudioTracks(),
             ]);
             webcamRecorder = new MediaRecorder(combinedWebcamStream, {
                 videoBitsPerSecond: bitrate,
             });
             webcamChunks = [];
             webcamRecorder.ondataavailable = (event) => {
+                console.log('Webcam recorder data available', event.data.size);
                 if (event.data.size > 0) {
                     webcamChunks.push(event.data);
                 }
             };
             webcamRecorder.start();
+            console.log('Webcam MediaRecorder started', webcamRecorder.state);
         }
 
         currentSessionId = await window.electronAPI.newSessionId();
@@ -256,6 +279,8 @@ async function stopRecording() {
     };
 
     mediaRecorder.onstop = async () => {
+        console.log('MediaRecorder stopped, chunks: ', recordedChunks.length);
+        console.log('Total size:', recordedChunks.reduce((total, chunk) => total + chunk.size, 0), 'bytes');
         if(recordedChunks.length === 0) {
             alert('Recording was too short and has been discarded.');
             return;

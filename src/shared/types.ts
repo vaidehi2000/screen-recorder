@@ -40,12 +40,19 @@ export interface ElectronAPI {
         error?: string
     }>;
     chooseSaveLocation: () => Promise<string | null>;
-}
-
-export interface SaveRecordingPayload {
-    buffer: ArrayBuffer;
-    type: 'screen' | 'webcam';
-    sessionId: string;
+    mergeRecordings: (params: {
+        screenPath: string;
+        webcamPath: string;
+        sessionPath: string;
+    }) => Promise<{ 
+        success: boolean; 
+        outputPath?: string; 
+        error?: string 
+    }>;
+    deleteFiles: (paths: string[]) => Promise<{
+        success: boolean;
+        error?: string;
+    }>;
 }
 
 export interface SaveRecordingResponse {

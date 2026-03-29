@@ -23,12 +23,24 @@ const editScreenBtn = document.getElementById('edit-screen-btn') as HTMLButtonEl
 const editWebcamBtn = document.getElementById('edit-webcam-btn') as HTMLButtonElement;
 const editFolderBtn = document.getElementById('edit-folder-btn') as HTMLButtonElement;  
 
+const mergeBtn = document.getElementById('merge-btn') as HTMLButtonElement;
+const mergedContainer = document.getElementById('merged-container') as HTMLDivElement;
+const mergedPreview = document.getElementById('merged-preview') as HTMLVideoElement;
+const mergedFilenameEl = document.getElementById('merged-filename') as HTMLSpanElement;
+const editMergedBtn = document.getElementById('edit-merged-btn') as HTMLButtonElement;
+const defaultActionButtons = document.getElementById('default-actions') as HTMLDivElement;
+const mergedActionButtons = document.getElementById('merged-actions') as HTMLDivElement;
+const keepMergedBtn = document.getElementById('keep-merged-btn') as HTMLButtonElement;
+const keepAllBtn = document.getElementById('keep-all-btn') as HTMLButtonElement;
+const discardAllBtn = document.getElementById('discard-all-btn') as HTMLButtonElement;
+
 let currentScreenName = screenFileName;
 let currentWebcamName = webcamFileName;
 let currentFolderName = folderName;
 let currentSessionPath = sessionPath;
 let currentWebcamPath = webcamPath;
 let currentScreenPath = filePath;
+let currentMergedPath = '';
 
 screenFilenameEl.textContent = currentScreenName;
 webcamFilenameEl.textContent = currentWebcamName;
@@ -39,33 +51,15 @@ locationEl.textContent = `Saved to: ${sessionPath}`;
 
 if (filePath) {
     screenPreview.src = `file://${filePath}`;
-    screenPreview.play();
+    screenPreview.onloadeddata = () => screenPreview.play();
 }
 
 if (webcamPath) {
     webcamReviewPreview.src = `file://${webcamPath}`;
-    webcamReviewPreview.play();
+    webcamReviewPreview.onloadeddata = () => webcamReviewPreview.play();
     webCamContainer.classList.remove('hidden');
+    mergeBtn.classList.remove('hidden');
 }
-
-openFolderBtn.addEventListener('click', () => {
-    if (currentSessionPath) {
-        window.electronAPI.openFolder(currentSessionPath);
-    }
-});
-
-discardBtn.addEventListener('click', () => {
-    console.log('Discard clicked');
-    console.log('Current paths:', {
-        screenPath: currentScreenPath,
-        webcamPath: currentWebcamPath,
-        sessionPath: currentSessionPath
-    });
-    window.electronAPI.closeReviewWindow({
-        screenPath: currentScreenPath,
-        webcamPath: currentWebcamPath
-    });
-});
 
 function makeEditable(
     spanEl: HTMLSpanElement, 
@@ -121,6 +115,25 @@ function makeEditable(
     });
 }
 
+openFolderBtn.addEventListener('click', () => {
+    if (currentSessionPath) {
+        window.electronAPI.openFolder(currentSessionPath);
+    }
+});
+
+discardBtn.addEventListener('click', () => {
+    console.log('Discard clicked');
+    console.log('Current paths:', {
+        screenPath: currentScreenPath,
+        webcamPath: currentWebcamPath,
+        sessionPath: currentSessionPath
+    });
+    window.electronAPI.closeReviewWindow({
+        screenPath: currentScreenPath,
+        webcamPath: currentWebcamPath
+    });
+});
+
 editScreenBtn.addEventListener('click', () => {
     makeEditable(
         screenFilenameEl, 
@@ -167,6 +180,79 @@ editFolderBtn.addEventListener('click', () => {
             currentSessionPath = newPath;
             locationEl.textContent = `Saved to: ${newPath}`;
             folderNameEl.textContent = `${_newName}`;
+        }
+    );
+});
+
+mergeBtn.addEventListener('click', async () => {
+    mergeBtn.disabled = true;
+    mergeBtn.textContent = 'Merging...';
+
+    const result = await window.electronAPI.mergeRecordings({
+        screenPath: currentScreenPath,
+        webcamPath: currentWebcamPath,
+        sessionPath: currentSessionPath,
+    });
+
+    mergeBtn.disabled = false;
+    mergeBtn.textContent = 'Merge to MP4';
+
+    if (result.success && result.outputPath) {
+        currentMergedPath = result.outputPath;
+        mergedPreview.src = `file://${result.outputPath}`;
+        mergedPreview.onloadeddata = () => mergedPreview.play();
+        mergedFilenameEl.textContent = result.outputPath.split(/[\\/]/).pop() || 'merged.mp4';
+        defaultActionButtons.classList.add('hidden');
+        mergedContainer.classList.remove('hidden');
+        mergedActionButtons.classList.remove('hidden');
+    } else {
+        alert(`Error merging recordings: ${result.error || 'Unknown error'}`);
+    }
+});
+
+keepMergedBtn.addEventListener('click', async () => {
+    await window.electronAPI.deleteFiles([currentScreenPath, currentWebcamPath]);
+    currentScreenPath = '';
+    currentWebcamPath = ''; 
+    window.electronAPI.openFolder(currentSessionPath);
+    window.electronAPI.closeReviewWindow({
+        screenPath: '',
+        webcamPath: ''
+    });
+});
+
+keepAllBtn.addEventListener('click', () => {
+    window.electronAPI.openFolder(currentSessionPath);
+    window.electronAPI.closeReviewWindow({
+        screenPath: '',
+        webcamPath: ''
+    });
+});
+
+discardAllBtn.addEventListener('click', async () => {
+    const pathsToDelete = [currentScreenPath, currentWebcamPath, currentMergedPath].filter(path => path);
+    await window.electronAPI.deleteFiles(pathsToDelete);
+    currentScreenPath = '';
+    currentWebcamPath = '';
+    currentMergedPath = '';
+    window.electronAPI.closeReviewWindow({
+        screenPath: '',
+        webcamPath: ''
+    });
+});
+
+editMergedBtn.addEventListener('click', () => {
+    makeEditable(
+        mergedFilenameEl,
+        currentMergedPath,
+        (oldPath, newName) => window.electronAPI.renameFile({
+            oldPath,
+            newPath: newName
+        }),
+        (newPath, _newName) => {
+            currentMergedPath = newPath;
+            mergedFilenameEl.textContent = _newName;
+            mergedPreview.src = `file://${newPath}`;
         }
     );
 });

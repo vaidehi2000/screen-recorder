@@ -19,6 +19,7 @@
                 padding: 20px;
                 margin: 0;
                 box-sizing: border-box;
+                overflow-y: auto;
             }
             h1 {
                 font-size: 20px;
@@ -153,6 +154,27 @@
             .hidden {
                 display: none;
             }
+            #merged-container {
+                width: 100%;
+                margin-top: 16px;
+            }
+
+            #merged-container video {
+                width: 100%;
+                aspect-ratio: 16 / 9;
+                object-fit: contain;
+                background-color: black;
+                display: block;
+                border: 2px solid #555;
+                border-radius: 4px;
+            }
+
+            #merged-container p {
+                font-size: 14px;
+                color: #aaa;
+                text-align: center;
+                margin-bottom: 8px;
+            }
         </style>
     </head>
     <body>
@@ -180,6 +202,17 @@
                 </div>
             </div>
         </div>
+
+        <div id="merged-container" class="hidden">
+            <p>Merged Recording</p>
+            <video id="merged-preview" controls></video>
+            <div class = "filename-row">
+                <span id="merged-filename"></span>
+                <button class="edit-btn" id="edit-merged-btn">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+            </div>
+        </div>
         
         <div class="info-section">
             <div class="folder-row">
@@ -192,9 +225,16 @@
             <p id="duration"></p>
             <p id="location"></p>
         </div>
-        <div class="action-buttons">
+        <div class="action-buttons" id="default-actions">
             <button id="open-folder-btn">Open Folder</button>
+            <button id="merge-btn" class="hidden">Merge to MP4</button>
             <button id="discard-btn">Discard</button>
+        </div>
+
+        <div class="action-buttons hidden" id="merged-actions">
+            <button id="keep-merged-btn">Keep Merged Only</button>
+            <button id="keep-all-btn">Keep All</button>
+            <button id="discard-all-btn">Discard All</button>
         </div>
 
         <script src="../../dist/renderer/review.js"></script>

@@ -1,6 +1,50 @@
 import { app, BrowserWindow, ipcMain, desktopCapturer, shell, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import Ffmpeg from 'fluent-ffmpeg';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+Ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+Ffmpeg.setFfprobePath(ffprobeInstaller.path);
+
+function mergeRecordings(screenPath: string, webcamPath: string, outputPath: string, screenDimensions: { width: number; height: number }): Promise<void> {
+    return new Promise((resolve, reject) => {
+        Ffmpeg()
+            .input(screenPath)
+            .input(webcamPath)
+            .complexFilter([
+                '[0:v]setpts=PTS-STARTPTS[screen]',
+                `[1:v]setpts=PTS-STARTPTS,scale=${Math.round(screenDimensions.width / 4)}:-2[webcam]`,
+                '[screen][webcam]overlay=W-w-20:H-h-20[outv]'
+            ])
+            .outputOptions([
+                '-map [outv]',
+                '-map 0:a?',
+                '-c:v libx264',
+                '-c:a aac',
+                '-crf 23', 
+                '-preset fast',
+                '-max_muxing_queue_size 1024'
+            ])
+            .output(outputPath)
+            .on('start', (cmd) => {
+                console.log('ffmpeg command:', cmd);
+            })
+            .on('stderr', (line) => {
+                console.log('ffmpeg:', line);
+            })
+            .on('end', () => {
+                console.log('Merge complete:', outputPath);
+                resolve();
+            })
+            .on('error', (err) => {
+                console.error('Merge error:', err);
+                reject(err);
+            })
+            .run();
+    }
+)};
+
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -9,9 +53,30 @@ function createWindow() {
         webPreferences: {
             preload: path.join(__dirname, '../preload/preload.js'),
             contextIsolation: true,
+            enableBlinkFeatures: 'GetUserMedia',
         }
     });
     win.loadFile('src/renderer/index.html');
+}
+
+function getVideoDimensions(videoPath: string): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+        Ffmpeg.ffprobe(videoPath, (err, metadata) => {
+            if (err) {
+                reject(err);
+            } else {
+                const stream = metadata.streams.find(s => s.codec_type === 'video');
+                if (stream && stream.width && stream.height) {
+                    resolve({ 
+                        width: stream.width || 1920, 
+                        height: stream.height || 1080
+                    });
+                } else {
+                    reject(new Error('No video stream found'));
+                }
+            }
+        });
+    });
 }
 
 ipcMain.handle('get-sources', async () => {
@@ -64,7 +129,9 @@ ipcMain.on('close-review-window', (event, { screenPath, webcamPath }: { screenPa
     console.log('screenPath:', screenPath);
     console.log('webcamPath:', webcamPath);
 
-    const sessionDir = screenPath ? path.dirname(screenPath) : (webcamPath ? path.dirname(webcamPath) : null);
+    const sessionDir = screenPath && screenPath.length > 0 ? path.dirname(screenPath) : 
+                    (webcamPath && webcamPath.length > 0 ? path.dirname(webcamPath) : null);
+                    
     if (screenPath) {
         fs.promises.unlink(screenPath)
         .then(() => console.log('Screen recording deleted successfully'))
@@ -138,4 +205,31 @@ ipcMain.handle('choose-save-location', async (event) => {
         return null;
     }
     return result.filePaths[0];
+});
+
+ipcMain.handle('merge-recordings', async (_event, { screenPath, webcamPath, sessionPath }) => {
+    try {
+        const screenDimensions = await getVideoDimensions(screenPath);
+        const outputPath = path.join(sessionPath, `merged-${Date.now()}.mp4`);
+        await mergeRecordings(screenPath, webcamPath, outputPath, screenDimensions);
+        return { success: true, outputPath };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { success: false, error: message };
+    }
+});
+
+ipcMain.handle('delete-files', async (_event, paths: string[]) => {
+    try {
+        for (const filePath of paths) {
+            if (filePath && fs.existsSync(filePath)) {
+                await fs.promises.unlink(filePath)
+                .catch(err => console.error(`Error deleting file ${filePath}:`, err));
+            }
+        }
+        return { success: true };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { success: false, error: message };
+    }
 });

@@ -14,5 +14,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('rename-file', params),
     renameFolder: (params: { oldPath: string; newPath: string }) => 
       ipcRenderer.invoke('rename-folder', params),
-    chooseSaveLocation: () => ipcRenderer.invoke('choose-save-location')
+    chooseSaveLocation: () => ipcRenderer.invoke('choose-save-location'),
+    mergeRecordings: (params: { screenPath: string; webcamPath: string; sessionPath: string }) => 
+      ipcRenderer.invoke('merge-recordings', params),
+    deleteFiles: (paths: string[]) => ipcRenderer.invoke('delete-files', paths)
 }); 
