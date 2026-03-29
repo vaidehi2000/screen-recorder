@@ -3,7 +3,20 @@ export interface CaptureSource {
     name: string;
     thumbnail: string; // Base64-encoded image
     appIcon: string | null; // Base64-encoded image or null
-    isScreen: boolean;  
+    isScreen: boolean; 
+}
+
+export interface SaveRecordingPayload {
+    buffer: ArrayBuffer;
+    type: 'screen' | 'webcam';
+    sessionId: string;
+    saveLocation?: string;
+}
+
+export interface SaveRecordingResponse {
+    success: boolean;
+    filePath?: string;
+    error?: string;
 }
 
 export interface ElectronAPI {
@@ -15,8 +28,6 @@ export interface ElectronAPI {
         screenPath: string; 
         webcamPath: string 
     }) => void;
-    minimize: () => void;
-    close: () => void;
     openReviewWindow: (params: { 
         filePath: string; 
         duration: string; 
@@ -55,21 +66,8 @@ export interface ElectronAPI {
     }>;
 }
 
-export interface SaveRecordingResponse {
-    success: boolean;
-    filePath?: string;
-    error?: string;
-}
-
 declare global {
     interface Window {
         electronAPI: ElectronAPI;
     }
-}
-
-export interface SaveRecordingPayload {
-    buffer: ArrayBuffer;
-    type: 'screen' | 'webcam';
-    sessionId: string;
-    saveLocation?: string;
 }

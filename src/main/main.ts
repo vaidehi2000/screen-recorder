@@ -27,18 +27,18 @@ function mergeRecordings(screenPath: string, webcamPath: string, outputPath: str
                 '-max_muxing_queue_size 1024'
             ])
             .output(outputPath)
-            .on('start', (cmd) => {
-                console.log('ffmpeg command:', cmd);
+            .on('start', () => {
+                console.log('[ffmpeg] Starting merge...');
             })
             .on('stderr', (line) => {
-                console.log('ffmpeg:', line);
+                if (line.includes('Error')) 
+                    console.error('[ffmpeg]', line); 
             })
             .on('end', () => {
-                console.log('Merge complete:', outputPath);
                 resolve();
             })
             .on('error', (err) => {
-                console.error('Merge error:', err);
+                console.error('[ffmpeg] Merge failed:', err);
                 reject(err);
             })
             .run();
@@ -79,6 +79,14 @@ function getVideoDimensions(videoPath: string): Promise<{ width: number; height:
     });
 }
 
+app.whenReady().then(() => {
+    createWindow();
+});
+
+app.on('window-all-closed', () => {
+    app.quit();
+});
+
 ipcMain.handle('get-sources', async () => {
     const sources = await desktopCapturer.getSources({
         types: ['window', 'screen'],
@@ -112,62 +120,6 @@ ipcMain.handle('save-recording', async (_event, { buffer, type, sessionId, saveL
     }
 });
 
-app.whenReady().then(() => {
-    createWindow();
-});
-
-app.on('window-all-closed', () => {
-    app.quit();
-});
-
-ipcMain.on('open-folder', (_event, folderPath: string) => {
-    shell.openPath(folderPath);
-});
-
-ipcMain.on('close-review-window', (event, { screenPath, webcamPath }: { screenPath: string, webcamPath: string }) => {
-    console.log('close-review-window called');
-    console.log('screenPath:', screenPath);
-    console.log('webcamPath:', webcamPath);
-
-    const sessionDir = screenPath && screenPath.length > 0 ? path.dirname(screenPath) : 
-                    (webcamPath && webcamPath.length > 0 ? path.dirname(webcamPath) : null);
-                    
-    if (screenPath) {
-        fs.promises.unlink(screenPath)
-        .then(() => console.log('Screen recording deleted successfully'))
-        .catch(err => console.error('Error deleting screen recording:', err));
-    }
-    if (webcamPath) {
-        fs.promises.unlink(webcamPath)
-        .catch(err => console.error('Error deleting webcam recording:', err));
-    }
-    if (sessionDir) {
-        setTimeout(() => {
-            fs.promises.rmdir(sessionDir)
-            .then(() => console.log('Session directory deleted successfully'))
-            .catch(err => console.error('Error deleting session directory:', err));
-        }, 500);
-    }
-    BrowserWindow.fromWebContents(event.sender)?.close();
-});
-
-ipcMain.handle('open-review-window', (_event, { filePath, duration, sessionPath, webcamPath }) => {
-    const reviewWin = new BrowserWindow({
-        width: 800,
-        height: 600,
-        title: 'Recording Complete',
-        webPreferences: {
-        preload: path.join(__dirname, '../preload/preload.js'),
-        contextIsolation: true,
-        },
-    });
-    reviewWin.focus();
-    reviewWin.loadFile(
-        path.join(__dirname, '../../src/renderer/review.html'),
-        { query: { path: filePath, duration, sessionPath, webcamPath } }
-    ); 
-});
-
 ipcMain.handle('rename-file', async (_event, { oldPath, newPath }) => {
     try {
         const dir = path.dirname(oldPath);
@@ -193,6 +145,63 @@ ipcMain.handle('rename-folder', async (_event, { oldPath, newPath }) => {
     }
 });
 
+ipcMain.handle('delete-files', async (_event, paths: string[]) => {
+    try {
+        for (const filePath of paths) {
+            if (filePath && fs.existsSync(filePath)) {
+                await fs.promises.unlink(filePath)
+                .catch(err => console.error(`Error deleting file ${filePath}:`, err));
+            }
+        }
+        return { success: true };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { success: false, error: message };
+    }
+});
+
+ipcMain.handle('open-review-window', (_event, { filePath, duration, sessionPath, webcamPath }) => {
+    const reviewWin = new BrowserWindow({
+        width: 800,
+        height: 600,
+        title: 'Recording Complete',
+        webPreferences: {
+        preload: path.join(__dirname, '../preload/preload.js'),
+        contextIsolation: true,
+        },
+    });
+    reviewWin.focus();
+    reviewWin.loadFile(
+        path.join(__dirname, '../../src/renderer/review.html'),
+        { query: { path: filePath, duration, sessionPath, webcamPath } }
+    ); 
+});
+
+ipcMain.on('close-review-window', (event, { screenPath, webcamPath }: { screenPath: string, webcamPath: string }) => {
+    const sessionDir = screenPath && screenPath.length > 0 ? path.dirname(screenPath) : 
+                    (webcamPath && webcamPath.length > 0 ? path.dirname(webcamPath) : null);
+                    
+    if (screenPath) {
+        fs.promises.unlink(screenPath)
+        .catch(err => console.error('Error deleting screen recording:', err));
+    }
+    if (webcamPath) {
+        fs.promises.unlink(webcamPath)
+        .catch(err => console.error('Error deleting webcam recording:', err));
+    }
+    if (sessionDir) {
+        setTimeout(() => {
+            fs.promises.rmdir(sessionDir)
+            .catch(err => console.error('Error deleting session directory:', err));
+        }, 500);
+    }
+    BrowserWindow.fromWebContents(event.sender)?.close();
+});
+
+ipcMain.on('open-folder', (_event, folderPath: string) => {
+    shell.openPath(folderPath);
+});
+
 ipcMain.handle('choose-save-location', async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win) {
@@ -213,21 +222,6 @@ ipcMain.handle('merge-recordings', async (_event, { screenPath, webcamPath, sess
         const outputPath = path.join(sessionPath, `merged-${Date.now()}.mp4`);
         await mergeRecordings(screenPath, webcamPath, outputPath, screenDimensions);
         return { success: true, outputPath };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return { success: false, error: message };
-    }
-});
-
-ipcMain.handle('delete-files', async (_event, paths: string[]) => {
-    try {
-        for (const filePath of paths) {
-            if (filePath && fs.existsSync(filePath)) {
-                await fs.promises.unlink(filePath)
-                .catch(err => console.error(`Error deleting file ${filePath}:`, err));
-            }
-        }
-        return { success: true };
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return { success: false, error: message };

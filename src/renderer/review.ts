@@ -36,7 +36,6 @@ const discardAllBtn = document.getElementById('discard-all-btn') as HTMLButtonEl
 
 let currentScreenName = screenFileName;
 let currentWebcamName = webcamFileName;
-let currentFolderName = folderName;
 let currentSessionPath = sessionPath;
 let currentWebcamPath = webcamPath;
 let currentScreenPath = filePath;
@@ -82,11 +81,7 @@ function makeEditable(
         if (finished) return;
         finished = true;
 
-        console.log('finishEditing called');
-        console.log('currentName:', currentName);
-        console.log('nameWithoutExt:', nameWithoutExt);
         const newName = input.value.trim() || nameWithoutExt;
-        console.log('newName:', newName);
         if (newName !== nameWithoutExt) {
             const result = await renameFn(currentName, newName);
             if (result.success && result.newPath) {
@@ -122,12 +117,6 @@ openFolderBtn.addEventListener('click', () => {
 });
 
 discardBtn.addEventListener('click', () => {
-    console.log('Discard clicked');
-    console.log('Current paths:', {
-        screenPath: currentScreenPath,
-        webcamPath: currentWebcamPath,
-        sessionPath: currentSessionPath
-    });
     window.electronAPI.closeReviewWindow({
         screenPath: currentScreenPath,
         webcamPath: currentWebcamPath

@@ -3,31 +3,30 @@ body {
     color: white;
     font-family: sans-serif;
 }
+
 #sources-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 8px;
     padding: 12px;
-    /* max-height: 200px; */
-    /* overflow-y: auto;
-    margin-bottom: 20px; */
 }
+
 .source-item {
     background-color: #2d2d2d;
-    /* padding: 10px; */
     border: 2px solid transparent;
     border-radius: 4px;
-    /* margin-bottom: 5px; */
     cursor: pointer;
     overflow: hidden;
 }
+
 .source-item:hover {
     border-color: #555;
 }
+
 .source-item.selected {
     background-color: #0078d4;
-    /* color: white; */
 }
+
 .source-item-header {
     display: flex;
     align-items: center;

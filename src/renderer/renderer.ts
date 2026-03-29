@@ -50,10 +50,6 @@ async function toggleWebcam() {
             });
             webcamPreview.srcObject = webcamStream;
             webcamPreview.style.display = 'block';
-            if (webcamPreview) {
-                webcamPreview.srcObject = webcamStream;
-                webcamPreview.style.display = 'block';
-            }
         } catch (error) {
             console.error('Error accessing webcam:', error);
             webcamToggle.checked = false;
@@ -62,10 +58,6 @@ async function toggleWebcam() {
         if (webcamStream) {
             webcamStream.getTracks().forEach(track => track.stop());
             webcamStream = null;
-                if (webcamPreview) {
-                    webcamPreview.srcObject = null;
-                    webcamPreview.style.display = 'none';
-                }
         }
         webcamPreview.srcObject = null;
         webcamPreview.style.display = 'none';
@@ -147,7 +139,6 @@ async function startRecording() {
                 },
             } as unknown as MediaTrackConstraints,
         });
-        console.log('Screen stream obtained', stream.getTracks());
 
         if(micToggle.checked) {
             try {
@@ -159,8 +150,6 @@ async function startRecording() {
                 video: false 
                 });
                 micStream.getAudioTracks().forEach(track => stream.addTrack(track));
-                console.log('Microphone stream added to recording', stream.getTracks());
-                console.log('Audio tracks in stream:', stream.getAudioTracks());
             } 
             catch (error) {
                 let message = "";
@@ -203,8 +192,6 @@ async function startRecording() {
         mediaRecorder = new MediaRecorder(mixedStream, {
             videoBitsPerSecond: bitrate,
         });
-        console.log('new MediaRecorder created', mediaRecorder.state);
-        console.log('Mediarecorder mimeType:', mediaRecorder.mimeType);
         recordedChunks = [];
 
         mediaRecorder.ondataavailable = (event) => {
@@ -214,7 +201,6 @@ async function startRecording() {
         };
 
         mediaRecorder.start();
-        console.log('MediaRecorder started', mediaRecorder.state);
         if (webcamStream) {
             const combinedWebcamStream = new MediaStream([
                 ...webcamStream.getVideoTracks(),
@@ -225,13 +211,11 @@ async function startRecording() {
             });
             webcamChunks = [];
             webcamRecorder.ondataavailable = (event) => {
-                console.log('Webcam recorder data available', event.data.size);
                 if (event.data.size > 0) {
                     webcamChunks.push(event.data);
                 }
             };
             webcamRecorder.start();
-            console.log('Webcam MediaRecorder started', webcamRecorder.state);
         }
 
         currentSessionId = await window.electronAPI.newSessionId();
@@ -256,12 +240,10 @@ async function startRecording() {
 
 async function stopRecording() {
     if (!mediaRecorder) return;
-
     let screenSaved = false;
     let webcamSaved = false;
     let screenFilePath = '';
     let webcamFilePath = '';
-    // const actualSeconds = Math.max(0, timerSeconds - 1);
     const hours = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
     const minutes = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
     const seconds = (timerSeconds % 60).toString().padStart(2, '0');
@@ -279,8 +261,6 @@ async function stopRecording() {
     };
 
     mediaRecorder.onstop = async () => {
-        console.log('MediaRecorder stopped, chunks: ', recordedChunks.length);
-        console.log('Total size:', recordedChunks.reduce((total, chunk) => total + chunk.size, 0), 'bytes');
         if(recordedChunks.length === 0) {
             alert('Recording was too short and has been discarded.');
             return;
