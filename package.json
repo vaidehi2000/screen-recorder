@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "npm run build && electron .",
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "start": "npm run dev"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

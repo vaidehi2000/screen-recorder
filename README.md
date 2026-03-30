@@ -82,7 +82,7 @@ No separate installation of ffmpeg or ffprobe is required — they are bundled w
 
 ### Run
 ```bash
-npm run dev
+npm start
 ```
 
 ### Build
