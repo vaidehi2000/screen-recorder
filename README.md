@@ -89,6 +89,9 @@ npm run dev
 ```bash
 npm run build
 ```
+## Demo
+
+[Watch the app in action](https://youtu.be/Z6Rh01KInQE)
 
 ## Known Limitations
 
